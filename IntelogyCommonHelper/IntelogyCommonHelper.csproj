@@ -6,7 +6,7 @@
     <PackageProjectUrl>https://github.com/samuelGrahame/IntelogyCommonHelper</PackageProjectUrl>
     <FileVersion>1.0.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>

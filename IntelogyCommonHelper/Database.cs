@@ -237,7 +237,7 @@ namespace IntelogyCommonHelper
         public async Task<MySqlConnection> CheckConnectionValidAsync()
         {
             MySqlConnection conn = _connection;
-            if (conn.State != ConnectionState.Closed)
+            if (conn.State == ConnectionState.Open)
             {
                 return conn;
             }

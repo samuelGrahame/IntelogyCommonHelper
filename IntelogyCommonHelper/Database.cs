@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace IntelogyCommonHelper
 {
-    public sealed class Database : IAsyncDisposable
+    public sealed class DatabaseAsync : IAsyncDisposable, IDisposable
     {
         private MySqlConnection _connection;
         private MySqlTransaction _transaction;
@@ -18,7 +18,7 @@ namespace IntelogyCommonHelper
         public static string Password { get; set; }
 
 
-        public Database(string database = "")
+        public DatabaseAsync(string database = "")
         {
             _connection = new MySqlConnection($"Server={Address};Port={Port};Uid={User};Pwd='{Password}';SslMode=none;Compress=true;ConvertZeroDateTime=true;" + (string.IsNullOrWhiteSpace(database) ? "" : $"Database={database}"));
             //var Settings = _connection.GetType().GetProperty("Settings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(_connection);            
@@ -277,6 +277,24 @@ namespace IntelogyCommonHelper
             if (_connection != null)
             {
                 await _connection.DisposeAsync();
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_transaction != null)
+            {
+                if (!_commited)
+                {
+                    _transaction.Rollback();
+                }
+
+                _transaction.Dispose();
+            }
+
+            if (_connection != null)
+            {
+                _connection.Dispose();
             }
         }
     }

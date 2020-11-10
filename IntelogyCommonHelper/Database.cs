@@ -121,14 +121,14 @@ namespace IntelogyCommonHelper
         }
 
 
-        public async Task ReadRowAsync<T>(string query, Action<DataReader> selector, params MySqlParameter[] parameters)
+        public async Task ReadRowAsync(string query, Action<DataReader> selector, params MySqlParameter[] parameters)
         {
             MySqlConnection conn = await CheckConnectionValidAsync();
             using MySqlCommand cmd = CreateCommand(conn, query, parameters);
 
             cmd.CommandText = query;
             using var r = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
-            var items = new List<T>();
+            
             var dr = new DataReader(r);
 
             if(!r.HasRows)

@@ -1,9 +1,9 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using MySqlConnector;
 
 namespace IntelogyCommonHelper
 {
@@ -121,30 +121,45 @@ namespace IntelogyCommonHelper
         }
 
 
-
-
-        public async Task<List<T>> ReadTransaction<T>(string query, Func<DataReader, T> selector, params MySqlParameter[] parameters)
+        public async Task ReadRowAsync<T>(string query, Action<DataReader> selector, params MySqlParameter[] parameters)
         {
             MySqlConnection conn = await CheckConnectionValidAsync();
-            using (MySqlCommand cmd = CreateCommand(conn, query, parameters))
-            {
-                cmd.CommandText = query;
-                using (var r = await cmd.ExecuteReaderAsync())
-                {
-                    var items = new List<T>();
-                    var dr = new DataReader(r);
+            using MySqlCommand cmd = CreateCommand(conn, query, parameters);
 
-                    while (await r.ReadAsync())
-                    {
-                        items.Add(selector(dr));
-                        dr.Index = 0;
-                    }
-                    return items;
-                }
+            cmd.CommandText = query;
+            using var r = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
+            var items = new List<T>();
+            var dr = new DataReader(r);
+
+            if(!r.HasRows)
+            {
+                return;
             }
+
+            await r.ReadAsync();
+
+            selector(dr);
         }
 
-        public async IAsyncEnumerable<T> ReadTransactionEnumerable<T>(string query, Func<DataReader, T> selector, params MySqlParameter[] parameters)
+        public async Task<List<T>> ReadTransactionAsync<T>(string query, Func<DataReader, T> selector, params MySqlParameter[] parameters)
+        {
+            MySqlConnection conn = await CheckConnectionValidAsync();
+            using MySqlCommand cmd = CreateCommand(conn, query, parameters);
+
+            cmd.CommandText = query;
+            using var r = await cmd.ExecuteReaderAsync();
+            var items = new List<T>();
+            var dr = new DataReader(r);
+
+            while (await r.ReadAsync())
+            {
+                items.Add(selector(dr));
+                dr.Index = 0;
+            }
+            return items;
+        }
+
+        public async IAsyncEnumerable<T> ReadTransactionEnumerableAsync<T>(string query, Func<DataReader, T> selector, params MySqlParameter[] parameters)
         {
             MySqlConnection conn = await CheckConnectionValidAsync();
             using (MySqlCommand cmd = CreateCommand(conn, query, parameters))
@@ -188,7 +203,7 @@ namespace IntelogyCommonHelper
         /// <param name="query">The Query you wish to execute</param>
         /// <param name="parameters">The MySqlParameter you wish to attach to the query</param>
         /// <returns>A long value containing info in relation to the returnInfo parameter</returns>
-        public async Task<MySqlCommand> SetDataAsync(string query, params MySqlParameter[] parameters)
+        private async Task<MySqlCommand> SetDataAsync(string query, params MySqlParameter[] parameters)
         {
             MySqlConnection conn = await CheckConnectionValidAsync();
             if (_transaction == null)
